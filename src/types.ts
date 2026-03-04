@@ -28,6 +28,10 @@ export interface Tag {
   media_count?: number;
 }
 
+export interface TagTreeNode extends Tag {
+  children: TagTreeNode[];
+}
+
 export interface Album {
   id: number;
   name: string;

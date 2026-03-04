@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import type { MediaFile, Tag, Album, SearchFilters, DatabaseStats } from './types'
-import * as api from './api'
+import type { MediaFile, Tag, Album, SearchFilters, DatabaseStats } from '../types'
+import * as api from '../api'
 
 interface TimelineState {
   // Data
