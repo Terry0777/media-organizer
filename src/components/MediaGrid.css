@@ -1,0 +1,49 @@
+.media-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.media-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.section-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.section-count {
+  font-size: 14px;
+  color: #888;
+}
+
+.media-grid-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .media-grid-items {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .media-grid-items {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
