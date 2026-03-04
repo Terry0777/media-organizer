@@ -1,0 +1,47 @@
+[package]
+name = "media-organizer"
+version = "0.1.0"
+description = "Local-first media file organizer with tags"
+authors = ["Terry"]
+license = "MIT"
+repository = ""
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "media_organizer_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.5.4" }
+
+[dependencies]
+# Tauri
+tauri = { version = "2.10.0", features = [] }
+tauri-plugin-shell = "2"
+tauri-plugin-log = "2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# 数据库
+rusqlite = { version = "0.31", features = ["bundled"] }
+
+# 图像处理
+image = "0.25"
+kamadak-exif = "0.5"
+
+# 文件监控
+notify = "6.1"
+
+# 异步
+tokio = { version = "1.0", features = ["full"] }
+
+# 工具
+chrono = "0.4"
+sha2 = "0.10"
+walkdir = "2.0"
+uuid = { version = "1.0", features = ["v4"] }
+
+# 日志
+log = "0.4"
+env_logger = "0.11"
