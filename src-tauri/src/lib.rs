@@ -102,6 +102,68 @@ fn get_tag_usage(app_state: tauri::State<AppState>) -> Result<Vec<TagUsage>, Str
     TagRepository::get_usage(&conn).map_err(|e| e.to_string())
 }
 
+/// Update a tag
+#[tauri::command]
+fn update_tag(
+    app_state: tauri::State<AppState>,
+    id: i64,
+    name: Option<String>,
+    parent_id: Option<Option<i64>>,
+    color: Option<String>,
+) -> Result<(), String> {
+    let conn = app_state.db.get_conn().map_err(|e| e.to_string())?;
+    TagRepository::update(&conn, id, name.as_deref(), parent_id, color.as_deref())
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
+/// Delete a tag
+#[tauri::command]
+fn delete_tag(
+    app_state: tauri::State<AppState>,
+    id: i64,
+    delete_children: bool,
+) -> Result<usize, String> {
+    let conn = app_state.db.get_conn().map_err(|e| e.to_string())?;
+    
+    if delete_children {
+        // Delete all descendants first
+        TagRepository::delete_with_children(&conn, id).map_err(|e| e.to_string())
+    } else {
+        // Check if has children
+        let has_children = TagRepository::has_children(&conn, id).map_err(|e| e.to_string())?;
+        if has_children {
+            return Err("Tag has child tags. Set delete_children=true to delete all.".to_string());
+        }
+        TagRepository::delete(&conn, id).map_err(|e| e.to_string())
+    }
+}
+
+/// Merge two tags (move all media from source to target)
+#[tauri::command]
+fn merge_tags(
+    app_state: tauri::State<AppState>,
+    source_tag_id: i64,
+    target_tag_id: i64,
+) -> Result<usize, String> {
+    let conn = app_state.db.get_conn().map_err(|e| e.to_string())?;
+    TagRepository::merge_tags(&conn, source_tag_id, target_tag_id)
+        .map_err(|e| e.to_string())
+}
+
+/// Get suggested tags based on media metadata
+#[tauri::command]
+fn get_suggested_tags(
+    app_state: tauri::State<AppState>,
+    media_path: String,
+) -> Result<Vec<Tag>, String> {
+    // TODO: Implement AI-based tag suggestions
+    // For now, return empty list
+    let _ = media_path;
+    let _ = app_state;
+    Ok(Vec::new())
+}
+
 /// Add tag to media
 #[tauri::command]
 fn add_tag_to_media(
@@ -286,6 +348,10 @@ pub fn run() {
             create_tag,
             get_tags,
             get_tag_usage,
+            update_tag,
+            delete_tag,
+            merge_tags,
+            get_suggested_tags,
             add_tag_to_media,
             remove_tag_from_media,
             get_tags_for_media,
@@ -293,6 +359,8 @@ pub fn run() {
             get_albums,
             add_media_to_album,
             get_media_for_album,
+            scan_directory,
+            get_scan_progress,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

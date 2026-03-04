@@ -384,6 +384,94 @@ impl TagRepository {
         
         Ok(tag)
     }
+    
+    /// Update tag with optional fields
+    pub fn update(
+        conn: &Connection,
+        id: i64,
+        name: Option<&str>,
+        parent_id: Option<Option<i64>>,
+        color: Option<&str>,
+    ) -> Result<usize> {
+        let mut updates = Vec::new();
+        let mut params: Vec<&dyn rusqlite::types::ToSql> = Vec::new();
+        
+        if let Some(n) = name {
+            updates.push("name = ?");
+            params.push(n);
+        }
+        if let Some(pid) = parent_id {
+            updates.push("parent_id = ?");
+            if let Some(id) = pid {
+                params.push(id);
+            } else {
+                params.push(&rusqlite::types::Value::Null);
+            }
+        }
+        if let Some(c) = color {
+            updates.push("color = ?");
+            params.push(c);
+        }
+        
+        if updates.is_empty() {
+            return Ok(0);
+        }
+        
+        params.push(&id);
+        let sql = format!("UPDATE tags SET {} WHERE id = ?", updates.join(", "));
+        
+        let rows = conn.execute(&sql, rusqlite::params_from_iter(params))?;
+        Ok(rows)
+    }
+    
+    /// Check if tag has children
+    pub fn has_children(conn: &Connection, id: i64) -> Result<bool> {
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM tags WHERE parent_id = ?1",
+            params![id],
+            |row| row.get(0),
+        )?;
+        Ok(count > 0)
+    }
+    
+    /// Delete tag and all children recursively
+    pub fn delete_with_children(conn: &Connection, id: i64) -> Result<usize> {
+        // First delete all children (recursive)
+        let children: Vec<i64> = conn
+            .prepare("SELECT id FROM tags WHERE parent_id = ?1")?
+            .query_map(params![id], |row| row.get(0))?
+            .filter_map(|r| r.ok())
+            .collect();
+        
+        let mut deleted = 0;
+        for child_id in children {
+            deleted += Self::delete_with_children(conn, child_id)?;
+        }
+        
+        // Delete this tag
+        deleted += Self::delete(conn, id)?;
+        Ok(deleted)
+    }
+    
+    /// Merge two tags (move all media associations from source to target)
+    pub fn merge_tags(conn: &Connection, source_id: i64, target_id: i64) -> Result<usize> {
+        // Use INSERT OR IGNORE to avoid duplicates
+        let sql = "
+            INSERT OR IGNORE INTO media_tags (media_id, tag_id, created_at)
+            SELECT media_id, ?1, MIN(created_at)
+            FROM media_tags
+            WHERE tag_id = ?2
+            GROUP BY media_id
+        ";
+        
+        let mut stmt = conn.prepare(sql)?;
+        let rows = stmt.execute(params![target_id, source_id])?;
+        
+        // Delete old associations
+        conn.execute("DELETE FROM media_tags WHERE tag_id = ?1", params![source_id])?;
+        
+        Ok(rows)
+    }
 }
 
 /// Media-Tag junction repository
