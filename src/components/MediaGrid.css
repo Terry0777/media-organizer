@@ -47,3 +47,29 @@
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
 }
+
+/* Selection mode styles */
+.media-card-wrapper {
+  position: relative;
+}
+
+.media-card-wrapper.selected .media-card {
+  box-shadow: 0 0 0 3px #007aff;
+}
+
+.selection-checkbox {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.selection-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #007aff;
+}

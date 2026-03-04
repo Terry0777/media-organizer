@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useTimelineStore } from '../stores/timelineStore'
 import { MediaGrid } from '../components/MediaGrid'
 import { TimelineHeader } from '../components/TimelineHeader'
+import { SelectionToolbar } from '../components/SelectionToolbar'
 import './TimelineView.css'
 
 export function TimelineView() {
@@ -10,10 +11,15 @@ export function TimelineView() {
     stats,
     isLoading,
     error,
+    isSelectionMode,
+    selectedMediaIds,
     loadMediaFiles,
     loadStats,
     scanDirectory,
     clearError,
+    toggleSelectionMode,
+    selectMedia,
+    deselectMedia,
   } = useTimelineStore()
 
   useEffect(() => {
@@ -30,9 +36,25 @@ export function TimelineView() {
     }
   }
 
+  const handleSelectMedia = (mediaId: number) => {
+    if (selectedMediaIds.includes(mediaId)) {
+      deselectMedia(mediaId)
+    } else {
+      selectMedia(mediaId)
+    }
+  }
+
   return (
     <div className="timeline-view">
-      <TimelineHeader stats={stats} onScan={handleScan} />
+      <TimelineHeader
+        stats={stats}
+        onScan={handleScan}
+        isSelectionMode={isSelectionMode}
+        toggleSelectionMode={toggleSelectionMode}
+        selectedCount={selectedMediaIds.length}
+      />
+      
+      <SelectionToolbar />
       
       <main className="timeline-content">
         {error && (
@@ -57,7 +79,12 @@ export function TimelineView() {
             </button>
           </div>
         ) : (
-          <MediaGrid mediaFiles={mediaFiles} />
+          <MediaGrid
+            mediaFiles={mediaFiles}
+            isSelectionMode={isSelectionMode}
+            selectedMediaIds={selectedMediaIds}
+            onSelectMedia={handleSelectMedia}
+          />
         )}
       </main>
     </div>
