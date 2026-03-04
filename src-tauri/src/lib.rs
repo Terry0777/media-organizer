@@ -1,8 +1,10 @@
 mod db;
 mod models;
+mod services;
 
 use db::{Database, MediaRepository, TagRepository, MediaTagRepository, AlbumRepository, AlbumMediaRepository};
 use models::*;
+use services::{FileScanner, ScannerConfig};
 use tauri::Manager;
 use std::sync::Arc;
 use log::info;
@@ -120,6 +122,71 @@ fn remove_tag_from_media(
 ) -> Result<usize, String> {
     let conn = app_state.db.get_conn().map_err(|e| e.to_string())?;
     MediaTagRepository::remove(&conn, media_id, tag_id).map_err(|e| e.to_string())
+}
+
+/// Scan directory for media files
+#[tauri::command]
+async fn scan_directory(
+    app_state: tauri::State<'_, AppState>,
+    path: String,
+    recursive: bool,
+    extract_metadata: bool,
+) -> Result<ScanResult, String> {
+    use std::path::Path;
+    
+    info!("Scanning directory: {} (recursive={}, metadata={})", path, recursive, extract_metadata);
+    
+    let config = ScannerConfig {
+        recursive,
+        extract_metadata,
+        generate_thumbnail: false,
+        thumbnail_size: 256,
+    };
+    
+    let scanner = FileScanner::new(config);
+    let path = Path::new(&path);
+    
+    let (media_files, stats) = scanner.scan_directory(path)?;
+    
+    // Insert media files into database
+    let conn = app_state.db.get_conn().map_err(|e| e.to_string())?;
+    let mut inserted_count = 0;
+    
+    for media in media_files {
+        match MediaRepository::insert(&conn, &media) {
+            Ok(_) => inserted_count += 1,
+            Err(e) => {
+                warn!("Failed to insert media {:?}: {}", media.file_path, e);
+            }
+        }
+    }
+    
+    info!("Scan completed: {} files inserted", inserted_count);
+    
+    Ok(ScanResult {
+        message: format!("Successfully scanned {} files", stats.total_files),
+        stats: ScanStats {
+            total_files: stats.total_files,
+            images: stats.images,
+            videos: stats.videos,
+            skipped: stats.skipped,
+            errors: stats.errors,
+            total_size: stats.total_size,
+            inserted: inserted_count as u64,
+        },
+    })
+}
+
+/// Get scan progress (placeholder for future async progress reporting)
+#[tauri::command]
+fn get_scan_progress() -> Result<ScanProgress, String> {
+    Ok(ScanProgress {
+        is_scanning: false,
+        current_file: None,
+        processed: 0,
+        total: 0,
+        percentage: 0.0,
+    })
 }
 
 /// Get tags for media
