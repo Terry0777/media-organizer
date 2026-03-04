@@ -1,0 +1,93 @@
+.selection-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: white;
+  border-bottom: 2px solid #007aff;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: toolbar-slide-down 0.2s ease-out;
+}
+
+@keyframes toolbar-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toolbar-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.selected-count {
+  font-size: 14px;
+  color: #333;
+}
+
+.selected-count strong {
+  color: #007aff;
+  font-size: 16px;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-btn {
+  background: #f5f5f5;
+  color: #333;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.toolbar-btn:hover {
+  background: #e0e0e0;
+}
+
+.toolbar-btn.primary {
+  background: #007aff;
+  color: white;
+}
+
+.toolbar-btn.primary:hover {
+  background: #0056cc;
+}
+
+.toolbar-btn.primary:disabled {
+  background: #99c9ff;
+  cursor: not-allowed;
+}
+
+.toolbar-btn.danger {
+  background: #fee;
+  color: #c00;
+}
+
+.toolbar-btn.danger:hover {
+  background: #fcc;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: #e0e0e0;
+  margin: 0 8px;
+}

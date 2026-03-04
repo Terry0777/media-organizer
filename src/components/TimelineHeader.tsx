@@ -4,9 +4,18 @@ import './TimelineHeader.css'
 interface TimelineHeaderProps {
   stats: DatabaseStats | null
   onScan: () => void
+  isSelectionMode: boolean
+  toggleSelectionMode: () => void
+  selectedCount: number
 }
 
-export function TimelineHeader({ stats, onScan }: TimelineHeaderProps) {
+export function TimelineHeader({
+  stats,
+  onScan,
+  isSelectionMode,
+  toggleSelectionMode,
+  selectedCount,
+}: TimelineHeaderProps) {
   return (
     <header className="timeline-header">
       <div className="header-content">
@@ -25,7 +34,7 @@ export function TimelineHeader({ stats, onScan }: TimelineHeaderProps) {
         </div>
         
         <div className="header-actions">
-          {stats && (
+          {stats && !isSelectionMode && (
             <div className="stats-summary">
               <span className="stat-item">
                 📁 {formatNumber(stats.total_files)} files
@@ -39,13 +48,23 @@ export function TimelineHeader({ stats, onScan }: TimelineHeaderProps) {
             </div>
           )}
           
-          <button className="scan-btn" onClick={onScan}>
-            📂 Scan Directory
-          </button>
-          
-          <button className="settings-btn" title="Settings">
-            ⚙️
-          </button>
+          {isSelectionMode ? (
+            <div className="selection-mode-info">
+              <span className="selected-badge">
+                📁 {selectedCount} selected
+              </span>
+            </div>
+          ) : (
+            <>
+              <button className="scan-btn" onClick={onScan}>
+                📂 Scan Directory
+              </button>
+              
+              <button className="settings-btn" title="Settings">
+                ⚙️
+              </button>
+            </>
+          )}
         </div>
       </div>
     </header>

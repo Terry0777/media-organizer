@@ -5,11 +5,20 @@ import './TagTree.css'
 interface TagTreeProps {
   tags: TagTreeNode[]
   selectedTagId?: number
+  selectedTagIds?: number[]
+  multipleSelect?: boolean
   onSelectTag?: (tagId: number) => void
   onRightClick?: (tag: TagTreeNode) => void
 }
 
-export function TagTree({ tags, selectedTagId, onSelectTag, onRightClick }: TagTreeProps) {
+export function TagTree({
+  tags,
+  selectedTagId,
+  selectedTagIds,
+  multipleSelect = false,
+  onSelectTag,
+  onRightClick,
+}: TagTreeProps) {
   return (
     <div className="tag-tree">
       {tags.length === 0 ? (
@@ -24,6 +33,8 @@ export function TagTree({ tags, selectedTagId, onSelectTag, onRightClick }: TagT
               key={tag.id}
               node={tag}
               selectedTagId={selectedTagId}
+              selectedTagIds={selectedTagIds}
+              multipleSelect={multipleSelect}
               onSelectTag={onSelectTag}
               onRightClick={onRightClick}
               depth={0}

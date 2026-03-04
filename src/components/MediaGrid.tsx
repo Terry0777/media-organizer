@@ -4,9 +4,17 @@ import './MediaGrid.css'
 
 interface MediaGridProps {
   mediaFiles: MediaFile[]
+  isSelectionMode: boolean
+  selectedMediaIds: number[]
+  onSelectMedia: (mediaId: number) => void
 }
 
-export function MediaGrid({ mediaFiles }: MediaGridProps) {
+export function MediaGrid({
+  mediaFiles,
+  isSelectionMode,
+  selectedMediaIds,
+  onSelectMedia,
+}: MediaGridProps) {
   // Group media files by date
   const groupedByDate = groupMediaByDate(mediaFiles)
 
@@ -20,7 +28,22 @@ export function MediaGrid({ mediaFiles }: MediaGridProps) {
           </div>
           <div className="media-grid-items">
             {files.map((file) => (
-              <MediaCard key={file.id} media={file} />
+              <div
+                key={file.id}
+                className={`media-card-wrapper ${selectedMediaIds.includes(file.id!) ? 'selected' : ''}`}
+              >
+                {isSelectionMode && (
+                  <div className="selection-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={selectedMediaIds.includes(file.id!)}
+                      onChange={() => onSelectMedia(file.id!)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                )}
+                <MediaCard media={file} />
+              </div>
             ))}
           </div>
         </div>

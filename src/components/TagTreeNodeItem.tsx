@@ -5,6 +5,8 @@ import './TagTreeNodeItem.css'
 interface TagTreeNodeItemProps {
   node: TagTreeNode
   selectedTagId?: number
+  selectedTagIds?: number[]
+  multipleSelect?: boolean
   onSelectTag?: (tagId: number) => void
   onRightClick?: (tag: TagTreeNode) => void
   depth: number
@@ -13,12 +15,18 @@ interface TagTreeNodeItemProps {
 export function TagTreeNodeItem({
   node,
   selectedTagId,
+  selectedTagIds,
+  multipleSelect = false,
   onSelectTag,
   onRightClick,
   depth,
 }: TagTreeNodeItemProps) {
   const [isExpanded, setIsExpanded] = useState(true)
   const hasChildren = node.children.length > 0
+  
+  const isSelected = multipleSelect
+    ? selectedTagIds?.includes(node.id)
+    : selectedTagId === node.id
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
