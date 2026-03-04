@@ -7,6 +7,8 @@ interface TimelineHeaderProps {
   isSelectionMode: boolean
   toggleSelectionMode: () => void
   selectedCount: number
+  onOpenFilter: () => void
+  hasActiveFilters: boolean
 }
 
 export function TimelineHeader({
@@ -15,6 +17,8 @@ export function TimelineHeader({
   isSelectionMode,
   toggleSelectionMode,
   selectedCount,
+  onOpenFilter,
+  hasActiveFilters,
 }: TimelineHeaderProps) {
   return (
     <header className="timeline-header">
@@ -56,6 +60,14 @@ export function TimelineHeader({
             </div>
           ) : (
             <>
+              <button
+                className={`filter-btn ${hasActiveFilters ? 'active' : ''}`}
+                onClick={onOpenFilter}
+                title="Filter and search"
+              >
+                🔍
+              </button>
+              
               <button className="scan-btn" onClick={onScan}>
                 📂 Scan Directory
               </button>
