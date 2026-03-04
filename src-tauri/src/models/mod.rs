@@ -175,3 +175,32 @@ pub struct DatabaseStats {
     pub total_tags: i64,
     pub total_albums: i64,
 }
+
+/// Scan result statistics
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ScanStats {
+    pub total_files: u64,
+    pub images: u64,
+    pub videos: u64,
+    pub skipped: u64,
+    pub errors: u64,
+    pub total_size: u64,
+    pub inserted: u64,
+}
+
+/// Scan result
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScanResult {
+    pub message: String,
+    pub stats: ScanStats,
+}
+
+/// Scan progress
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScanProgress {
+    pub is_scanning: bool,
+    pub current_file: Option<String>,
+    pub processed: u64,
+    pub total: u64,
+    pub percentage: f64,
+}
