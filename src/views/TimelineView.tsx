@@ -19,7 +19,6 @@ export function TimelineView() {
     loadStats,
     scanDirectory,
     clearError,
-    toggleSelectionMode,
     selectMedia,
     deselectMedia,
   } = useTimelineStore()
@@ -56,7 +55,6 @@ export function TimelineView() {
         stats={stats}
         onScan={handleScan}
         isSelectionMode={isSelectionMode}
-        toggleSelectionMode={toggleSelectionMode}
         selectedCount={selectedMediaIds.length}
         onOpenFilter={() => setIsFilterOpen(true)}
         hasActiveFilters={hasActiveFilters}

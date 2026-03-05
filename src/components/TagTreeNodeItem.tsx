@@ -15,8 +15,8 @@ interface TagTreeNodeItemProps {
 export function TagTreeNodeItem({
   node,
   selectedTagId,
-  selectedTagIds,
-  multipleSelect = false,
+  selectedTagIds: _selectedTagIds,
+  multipleSelect: _multipleSelect,
   onSelectTag,
   onRightClick,
   depth,
@@ -24,10 +24,6 @@ export function TagTreeNodeItem({
   const [isExpanded, setIsExpanded] = useState(true)
   const hasChildren = node.children.length > 0
   
-  const isSelected = multipleSelect
-    ? selectedTagIds?.includes(node.id)
-    : selectedTagId === node.id
-
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (hasChildren) {
