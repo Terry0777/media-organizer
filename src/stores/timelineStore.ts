@@ -43,8 +43,6 @@ interface TimelineState {
   batchRemoveTags: (tagIds: number[]) => Promise<void>
 }
 
-import * as api from './api'
-
 export const useTimelineStore = create<TimelineState>((set, get) => ({
   // Initial state
   mediaFiles: [],

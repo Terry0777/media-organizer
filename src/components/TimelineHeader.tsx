@@ -5,7 +5,6 @@ interface TimelineHeaderProps {
   stats: DatabaseStats | null
   onScan: () => void
   isSelectionMode: boolean
-  toggleSelectionMode: () => void
   selectedCount: number
   onOpenFilter: () => void
   hasActiveFilters: boolean
@@ -15,7 +14,6 @@ export function TimelineHeader({
   stats,
   onScan,
   isSelectionMode,
-  toggleSelectionMode,
   selectedCount,
   onOpenFilter,
   hasActiveFilters,
