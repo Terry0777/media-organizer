@@ -1,9 +1,9 @@
 //! Database schema and migrations
-//! 
+//!
 //! Defines the SQLite database structure for Media Organizer
 
-use rusqlite::{Connection, Result};
 use log::info;
+use rusqlite::{Connection, Result};
 
 /// Database schema version
 const SCHEMA_VERSION: i32 = 1;
@@ -11,10 +11,10 @@ const SCHEMA_VERSION: i32 = 1;
 /// Initialize database with all tables
 pub fn init_db(conn: &Connection) -> Result<()> {
     info!("Initializing database (version {})", SCHEMA_VERSION);
-    
+
     // Enable foreign keys
-    conn.execute("PRAGMA foreign_keys = ON", [])?;
-    
+    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
+
     // Create tables
     create_media_files_table(conn)?;
     create_tags_table(conn)?;
@@ -22,7 +22,7 @@ pub fn init_db(conn: &Connection) -> Result<()> {
     create_albums_table(conn)?;
     create_album_media_table(conn)?;
     create_indexes(conn)?;
-    
+
     // Store schema version
     conn.execute(
         "CREATE TABLE IF NOT EXISTS schema_version (
@@ -34,7 +34,7 @@ pub fn init_db(conn: &Connection) -> Result<()> {
         "INSERT OR REPLACE INTO schema_version (version) VALUES (?1)",
         [SCHEMA_VERSION],
     )?;
-    
+
     info!("Database initialized successfully");
     Ok(())
 }
@@ -142,7 +142,7 @@ fn create_indexes(conn: &Connection) -> Result<()> {
         "CREATE INDEX IF NOT EXISTS idx_album_media_album ON album_media(album_id)",
         "CREATE INDEX IF NOT EXISTS idx_album_media_media ON album_media(media_id)",
     ];
-    
+
     for sql in indexes {
         conn.execute(sql, [])?;
     }
@@ -152,11 +152,9 @@ fn create_indexes(conn: &Connection) -> Result<()> {
 
 /// Get current schema version
 pub fn get_schema_version(conn: &Connection) -> Result<i32> {
-    conn.query_row(
-        "SELECT version FROM schema_version LIMIT 1",
-        [],
-        |row| row.get(0),
-    )
+    conn.query_row("SELECT version FROM schema_version LIMIT 1", [], |row| {
+        row.get(0)
+    })
     .or(Ok(0))
 }
 
@@ -170,13 +168,13 @@ pub fn needs_migration(conn: &Connection) -> Result<bool> {
 mod tests {
     use super::*;
     use rusqlite::Connection;
-    
+
     #[test]
     fn test_init_db() {
         let conn = Connection::open_in_memory().unwrap();
         let result = init_db(&conn);
         assert!(result.is_ok());
-        
+
         let version = get_schema_version(&conn).unwrap();
         assert_eq!(version, SCHEMA_VERSION);
     }
