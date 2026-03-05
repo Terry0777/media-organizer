@@ -170,7 +170,7 @@ impl FileScanner {
 
         // Extract media-specific metadata
         let (width, height, duration, taken_at, device, gps) = if file_type == FileType::Image {
-            self.extract_image_metadata_fast(path, &file_meta)?
+            self.extract_image_metadata(path, &file_meta)?
         } else {
             (None, None, None, None, None, None)
         };

@@ -202,6 +202,7 @@ async fn scan_directory(
         extract_metadata,
         generate_thumbnail: false,
         thumbnail_size: 256,
+        calculate_checksum: false,
     };
 
     let scanner = FileScanner::new(config);
