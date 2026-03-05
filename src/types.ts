@@ -44,6 +44,7 @@ export interface Album {
 export interface SearchFilters {
   file_type?: 'image' | 'video';
   tag_ids?: number[];
+  tag_logic?: 'AND' | 'OR';
   album_id?: number;
   date_from?: number;
   date_to?: number;

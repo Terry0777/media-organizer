@@ -1,0 +1,259 @@
+.filter-panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: filter-fade-in 0.2s ease-out;
+}
+
+@keyframes filter-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.filter-panel {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: filter-slide-up 0.2s ease-out;
+}
+
+@keyframes filter-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.filter-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.filter-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #888;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.filter-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.filter-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.filter-section {
+  margin-bottom: 24px;
+}
+
+.section-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.logic-switcher {
+  display: flex;
+  gap: 12px;
+}
+
+.logic-btn {
+  flex: 1;
+  background: #f5f5f5;
+  color: #666;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logic-btn:hover {
+  background: #e0e0e0;
+}
+
+.logic-btn.active {
+  background: #007aff;
+  color: white;
+  border-color: #007aff;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-chip:hover {
+  background: #e0e0e0;
+  border-color: #ccc;
+}
+
+.tag-chip.selected {
+  background: #e6f2ff;
+  border-color: #007aff;
+  color: #007aff;
+}
+
+.tag-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.check-mark {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.type-selector {
+  display: flex;
+  gap: 12px;
+}
+
+.type-btn {
+  flex: 1;
+  background: #f5f5f5;
+  color: #666;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.type-btn:hover {
+  background: #e0e0e0;
+}
+
+.type-btn.active {
+  background: #007aff;
+  color: white;
+  border-color: #007aff;
+}
+
+.date-inputs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.date-inputs input[type="date"] {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.date-inputs input[type="date"]:focus {
+  outline: none;
+  border-color: #007aff;
+}
+
+.date-separator {
+  color: #888;
+  font-size: 14px;
+}
+
+.filter-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.btn-clear {
+  background: #f5f5f5;
+  color: #666;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-clear:hover {
+  background: #e0e0e0;
+}
+
+.btn-apply {
+  background: #007aff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-apply:hover {
+  background: #0056cc;
+}

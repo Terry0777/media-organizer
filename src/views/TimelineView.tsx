@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTimelineStore } from '../stores/timelineStore'
 import { MediaGrid } from '../components/MediaGrid'
 import { TimelineHeader } from '../components/TimelineHeader'
 import { SelectionToolbar } from '../components/SelectionToolbar'
+import { FilterPanel } from '../components/FilterPanel'
 import './TimelineView.css'
 
 export function TimelineView() {
@@ -13,6 +14,7 @@ export function TimelineView() {
     error,
     isSelectionMode,
     selectedMediaIds,
+    currentFilters,
     loadMediaFiles,
     loadStats,
     scanDirectory,
@@ -21,6 +23,8 @@ export function TimelineView() {
     selectMedia,
     deselectMedia,
   } = useTimelineStore()
+  
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
 
   useEffect(() => {
     // Initial load
@@ -44,6 +48,8 @@ export function TimelineView() {
     }
   }
 
+  const hasActiveFilters = Object.keys(currentFilters).length > 0
+
   return (
     <div className="timeline-view">
       <TimelineHeader
@@ -52,6 +58,8 @@ export function TimelineView() {
         isSelectionMode={isSelectionMode}
         toggleSelectionMode={toggleSelectionMode}
         selectedCount={selectedMediaIds.length}
+        onOpenFilter={() => setIsFilterOpen(true)}
+        hasActiveFilters={hasActiveFilters}
       />
       
       <SelectionToolbar />
@@ -61,6 +69,13 @@ export function TimelineView() {
           <div className="error-banner">
             <span>{error}</span>
             <button onClick={clearError}>✕</button>
+          </div>
+        )}
+        
+        {hasActiveFilters && (
+          <div className="active-filters-banner">
+            <span>🔍 Active filters applied</span>
+            <button onClick={() => loadMediaFiles()}>Clear</button>
           </div>
         )}
         
@@ -87,6 +102,11 @@ export function TimelineView() {
           />
         )}
       </main>
+
+      <FilterPanel
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+      />
     </div>
   )
 }
