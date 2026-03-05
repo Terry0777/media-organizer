@@ -5,7 +5,7 @@
 use chrono::Utc;
 use image::ImageReader;
 use kamadak_exif;
-use log::info;
+use log::{info, warn};
 use sha2::{Digest, Sha256};
 use std::fs::{self, File};
 use std::io::BufReader;
@@ -227,31 +227,47 @@ impl FileScanner {
             let file = File::open(path).map_err(|e| format!("Failed to open image: {}", e))?;
             let mut buf_reader = BufReader::new(file);
 
-            if let Ok(exif_reader) = kamadak_exif::Parser::new().read_from_container(&mut buf_reader) {
-                // Extract date/time
-                if let Some(field) = exif_reader.get_field(kamadak_exif::Tag::DateTime, kamadak_exif::In::PRIMARY) {
-                    let date_str: String = field.display_value().to_string();
-                    if let Some(clean_date) = date_str.strip_prefix("ASCII, ") {
-                        if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(clean_date, "%Y:%m:%d %H:%M:%S") {
-                            taken_at = Some(dt.and_utc().timestamp() as i64);
+            // FIX: Correct API usage for kamadak-exif 0.5.x
+            // read_from_container returns the populated Reader directly
+            match kamadak_exif::Reader::new().read_from_container(&mut buf_reader) {
+                Ok(exif_reader) => {
+                    // Extract date/time
+                    if let Some(field) = exif_reader
+                        .get_field(kamadak_exif::Tag::DateTime, kamadak_exif::In::PRIMARY)
+                    {
+                        let date_str: String = field.display_value().to_string();
+                        if let Some(clean_date) = date_str.strip_prefix("ASCII, ") {
+                            if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(
+                                clean_date,
+                                "%Y:%m:%d %H:%M:%S",
+                            ) {
+                                taken_at = Some(dt.and_utc().timestamp() as i64);
+                            }
                         }
                     }
-                }
 
-                // Extract camera model
-                if let Some(field) = exif_reader.get_field(kamadak_exif::Tag::Model, kamadak_exif::In::PRIMARY) {
-                    let device_str: String = field.display_value().to_string();
-                    device = Some(device_str);
-                }
+                    // Extract camera model
+                    if let Some(field) =
+                        exif_reader.get_field(kamadak_exif::Tag::Model, kamadak_exif::In::PRIMARY)
+                    {
+                        let device_str: String = field.display_value().to_string();
+                        device = Some(device_str);
+                    }
 
-                // Extract GPS
-                if let (Some(_lat), Some(_lon)) = (
-                    exif_reader.get_field(kamadak_exif::Tag::GPSLatitude, kamadak_exif::In::PRIMARY),
-                    exif_reader.get_field(kamadak_exif::Tag::GPSLongitude, kamadak_exif::In::PRIMARY),
-                ) {
-                    // Simplified GPS parsing (full implementation would handle degrees/minutes/seconds)
-                    // For now, skip complex GPS parsing
-                    warn!("GPS data found but not parsed (complex format)");
+                    // Extract GPS
+                    if let (Some(_lat), Some(_lon)) = (
+                        exif_reader
+                            .get_field(kamadak_exif::Tag::GPSLatitude, kamadak_exif::In::PRIMARY),
+                        exif_reader
+                            .get_field(kamadak_exif::Tag::GPSLongitude, kamadak_exif::In::PRIMARY),
+                    ) {
+                        // Simplified GPS parsing (full implementation would handle degrees/minutes/seconds)
+                        // For now, skip complex GPS parsing
+                        warn!("GPS data found but not parsed (complex format)");
+                    }
+                }
+                Err(e) => {
+                    warn!("Failed to parse EXIF data: {}", e);
                 }
             }
         }
