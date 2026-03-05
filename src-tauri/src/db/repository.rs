@@ -2,8 +2,8 @@
 //! 
 //! Provides CRUD operations for media files, tags, and albums
 
-use rusqlite::{Connection, Result, params, OptionalExtension};
-use log::{info, warn};
+use rusqlite::{Connection, Result, params, OptionalExtension, types::ToSql};
+use log::info;
 use chrono::Utc;
 
 use crate::models::*;
@@ -89,39 +89,39 @@ impl MediaRepository {
              FROM media_files WHERE 1=1"
         );
         
-        let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+        let mut params: Vec<&dyn ToSql> = Vec::new();
         
         // Apply filters
         if let Some(ref file_type) = filters.file_type {
             sql.push_str(" AND file_type = ?");
-            params.push(Box::new(file_type.as_str()));
+            params.push(file_type.as_str());
         }
         
         if let Some(is_deleted) = filters.is_deleted {
             sql.push_str(" AND is_deleted = ?");
-            params.push(Box::new(is_deleted as i32));
+            params.push(&(is_deleted as i32));
         } else {
             sql.push_str(" AND is_deleted = 0");
         }
         
         if let Some(date_from) = filters.date_from {
             sql.push_str(" AND taken_at >= ?");
-            params.push(Box::new(date_from));
+            params.push(&date_from);
         }
         
         if let Some(date_to) = filters.date_to {
             sql.push_str(" AND taken_at <= ?");
-            params.push(Box::new(date_to));
+            params.push(&date_to);
         }
         
         if let Some(size_min) = filters.size_min {
             sql.push_str(" AND file_size >= ?");
-            params.push(Box::new(size_min));
+            params.push(&size_min);
         }
         
         if let Some(size_max) = filters.size_max {
             sql.push_str(" AND file_size <= ?");
-            params.push(Box::new(size_max));
+            params.push(&size_max);
         }
         
         // Get total count
@@ -131,8 +131,8 @@ impl MediaRepository {
         // Add ordering and pagination
         sql.push_str(" ORDER BY taken_at DESC, created_at DESC LIMIT ? OFFSET ?");
         let offset = (pagination.page - 1) * pagination.page_size;
-        params.push(Box::new(pagination.page_size as i64));
-        params.push(Box::new(offset as i64));
+        params.push(&(pagination.page_size as i64));
+        params.push(&(offset as i64));
         
         // Execute query
         let mut stmt = conn.prepare(&sql)?;

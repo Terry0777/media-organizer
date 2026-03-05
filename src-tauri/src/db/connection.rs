@@ -1,6 +1,6 @@
 //! Database connection and management
 
-use rusqlite::{Connection, Result, OptionalExtension};
+use rusqlite::{Connection, Result};
 use std::path::Path;
 use std::sync::Mutex;
 use log::{info, error};

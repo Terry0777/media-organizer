@@ -4,12 +4,12 @@
 
 use chrono::Utc;
 use image::ImageReader;
-use kamadak_exif::{In as ExifIn, Parser, Tag as ExifTag};
-use log::{info, warn};
+use kamadak_exif;
+use log::info;
 use sha2::{Digest, Sha256};
 use std::fs::{self, File};
-use std::io::{BufReader, Write};
-use std::path::{Path, PathBuf};
+use std::io::BufReader;
+use std::path::Path;
 use walkdir::WalkDir;
 
 use crate::models::*;
@@ -55,16 +55,12 @@ pub struct ScanStats {
 /// File scanner service
 pub struct FileScanner {
     config: ScannerConfig,
-    exif_parser: Parser,
 }
 
 impl FileScanner {
     /// Create new file scanner
     pub fn new(config: ScannerConfig) -> Self {
-        Self {
-            config,
-            exif_parser: Parser::new(),
-        }
+        Self { config }
     }
 
     /// Scan directory for media files
@@ -190,7 +186,7 @@ impl FileScanner {
             checksum: Some(checksum),
             thumbnail_path: None,
             is_deleted: false,
-            tags: vec![],
+            tags: Some(vec![]),
         };
 
         Ok(Some(media))
@@ -231,29 +227,27 @@ impl FileScanner {
             let file = File::open(path).map_err(|e| format!("Failed to open image: {}", e))?;
             let mut buf_reader = BufReader::new(file);
 
-            if let Ok(exif_reader) = self.exif_parser.read_from_container(&mut buf_reader) {
+            if let Ok(exif_reader) = kamadak_exif::Parser::new().read_from_container(&mut buf_reader) {
                 // Extract date/time
-                if let Some(field) = exif_reader.get_field(ExifTag::DateTime, ExifIn::PRIMARY) {
-                    if let Some(date_str) =
-                        field.display_value().to_string().strip_prefix("ASCII, ")
-                    {
-                        if let Ok(dt) =
-                            chrono::NaiveDateTime::parse_from_str(date_str, "%Y:%m:%d %H:%M:%S")
-                        {
+                if let Some(field) = exif_reader.get_field(kamadak_exif::Tag::DateTime, kamadak_exif::In::PRIMARY) {
+                    let date_str: String = field.display_value().to_string();
+                    if let Some(clean_date) = date_str.strip_prefix("ASCII, ") {
+                        if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(clean_date, "%Y:%m:%d %H:%M:%S") {
                             taken_at = Some(dt.and_utc().timestamp() as i64);
                         }
                     }
                 }
 
                 // Extract camera model
-                if let Some(field) = exif_reader.get_field(ExifTag::Model, ExifIn::PRIMARY) {
-                    device = Some(field.display_value().to_string());
+                if let Some(field) = exif_reader.get_field(kamadak_exif::Tag::Model, kamadak_exif::In::PRIMARY) {
+                    let device_str: String = field.display_value().to_string();
+                    device = Some(device_str);
                 }
 
                 // Extract GPS
                 if let (Some(_lat), Some(_lon)) = (
-                    exif_reader.get_field(ExifTag::GPSLatitude, ExifIn::PRIMARY),
-                    exif_reader.get_field(ExifTag::GPSLongitude, ExifIn::PRIMARY),
+                    exif_reader.get_field(kamadak_exif::Tag::GPSLatitude, kamadak_exif::In::PRIMARY),
+                    exif_reader.get_field(kamadak_exif::Tag::GPSLongitude, kamadak_exif::In::PRIMARY),
                 ) {
                     // Simplified GPS parsing (full implementation would handle degrees/minutes/seconds)
                     // For now, skip complex GPS parsing
@@ -282,7 +276,7 @@ impl FileScanner {
             return Ok(());
         }
 
-        use image::{GenericImageView, ImageFormat};
+        use image::ImageFormat;
 
         // Determine output format from extension
         let format = match output_path.extension().and_then(|e| e.to_str()) {
