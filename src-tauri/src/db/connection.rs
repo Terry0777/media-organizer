@@ -2,6 +2,7 @@
 
 use log::{error, info};
 use rusqlite::{Connection, Result};
+use std::fs; // <--- 1. 引入 fs 模块
 use std::path::Path;
 use std::sync::Mutex;
 
@@ -15,9 +16,27 @@ pub struct Database {
 impl Database {
     /// Open or create database at given path
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Self> {
-        info!("Opening database at: {:?}", path.as_ref());
+        let path_ref = path.as_ref();
 
-        let conn = Connection::open(path)?;
+        info!("Opening database at: {:?}", path_ref);
+
+        // ✅ 2. 关键修复：确保父目录存在
+        if let Some(parent) = path_ref.parent() {
+            if !parent.exists() {
+                info!("Creating database directory: {:?}", parent);
+                fs::create_dir_all(parent).map_err(|e| {
+                    error!("Failed to create database directory {:?}: {}", parent, e);
+                    // 将 IO 错误转换为 rusqlite 错误以便返回
+                    rusqlite::Error::SqliteFailure(
+                        rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CANTOPEN),
+                        Some(format!("Failed to create directory: {}", e)),
+                    )
+                })?;
+            }
+        }
+
+        // 3. 现在目录已存在，可以安全打开/创建文件了
+        let conn = Connection::open(path_ref)?;
 
         // Enable foreign keys
         conn.execute_batch("PRAGMA foreign_keys = ON;")?;
@@ -33,6 +52,7 @@ impl Database {
         })
     }
 
+    // ... 其余代码保持不变 ...
     /// Open in-memory database (for testing)
     pub fn open_in_memory() -> Result<Self> {
         let conn = Connection::open_in_memory()?;
@@ -43,6 +63,7 @@ impl Database {
         })
     }
 
+    // ... 下面的 init, get_conn 等方法都不需要动 ...
     /// Initialize database schema
     pub fn init(&self) -> Result<()> {
         let conn = self.conn.lock().map_err(|e| {
@@ -83,7 +104,7 @@ impl Database {
     pub fn vacuum(&self) -> Result<()> {
         info!("Running VACUUM on database");
         let conn = self.get_conn()?;
-        conn.execute("VACUUM", [])?;
+        conn.execute_batch("VACUUM;")?;
         Ok(())
     }
 
@@ -151,6 +172,7 @@ impl Database {
     }
 }
 
+// tests 模块保持不变...
 #[cfg(test)]
 mod tests {
     use super::*;
