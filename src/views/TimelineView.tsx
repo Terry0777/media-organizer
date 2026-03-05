@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { open } from '@tauri-apps/plugin-dialog'
 import { useTimelineStore } from '../stores/timelineStore'
 import { MediaGrid } from '../components/MediaGrid'
 import { TimelineHeader } from '../components/TimelineHeader'
@@ -32,10 +33,15 @@ export function TimelineView() {
   }, [])
 
   const handleScan = async () => {
-    // In a real app, this would open a file picker dialog
-    const path = prompt('Enter directory path to scan:')
-    if (path) {
-      await scanDirectory(path)
+    // Open folder picker dialog
+    const selected = await open({
+      directory: true,
+      multiple: false,
+      title: 'Select a folder to scan for media files',
+    })
+    
+    if (selected && typeof selected === 'string') {
+      await scanDirectory(selected)
     }
   }
 
