@@ -1,21 +1,23 @@
 //! File Scanner Service
-//! 
+//!
 //! Scans directories for media files and extracts metadata
 
-use std::path::{Path, PathBuf};
+use chrono::Utc;
+use image::ImageReader;
+use kamadak_exif::{In as ExifIn, Parser, Tag as ExifTag};
+use log::{info, warn};
+use sha2::{Digest, Sha256};
 use std::fs::{self, File};
 use std::io::{BufReader, Write};
+use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
-use image::ImageReader;
-use kamadak_exif::{Parser, Tag as ExifTag, In as ExifIn};
-use sha2::{Sha256, Digest};
-use log::{info, warn};
-use chrono::Utc;
 
 use crate::models::*;
 
 /// Supported image extensions
-const IMAGE_EXTENSIONS: &[&str] = &["jpg", "jpeg", "png", "gif", "webp", "heic", "raw", "cr2", "nef", "arw"];
+const IMAGE_EXTENSIONS: &[&str] = &[
+    "jpg", "jpeg", "png", "gif", "webp", "heic", "raw", "cr2", "nef", "arw",
+];
 
 /// Supported video extensions
 const VIDEO_EXTENSIONS: &[&str] = &["mp4", "mov", "avi", "mkv", "webm", "m4v"];
@@ -68,7 +70,7 @@ impl FileScanner {
     /// Scan directory for media files
     pub fn scan_directory(&self, path: &Path) -> Result<(Vec<MediaFile>, ScanStats), String> {
         info!("Scanning directory: {:?}", path);
-        
+
         if !path.exists() {
             return Err(format!("Directory does not exist: {:?}", path));
         }
@@ -89,12 +91,12 @@ impl FileScanner {
                             Ok(Some(media)) => {
                                 stats.total_files += 1;
                                 stats.total_size += media.file_size as u64;
-                                
+
                                 match media.file_type {
                                     FileType::Image => stats.images += 1,
                                     FileType::Video => stats.videos += 1,
                                 }
-                                
+
                                 media_files.push(media);
                             }
                             Ok(None) => {
@@ -140,17 +142,25 @@ impl FileScanner {
         };
 
         // Get file metadata
-        let file_meta = fs::metadata(path)
-            .map_err(|e| format!("Failed to read file metadata: {}", e))?;
+        let file_meta =
+            fs::metadata(path).map_err(|e| format!("Failed to read file metadata: {}", e))?;
 
         let file_size = file_meta.len() as i64;
         let created_at = file_meta
             .created()
-            .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64)
+            .map(|t| {
+                t.duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs() as i64
+            })
             .unwrap_or_else(|_| Utc::now().timestamp() as i64);
         let modified_at = file_meta
             .modified()
-            .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64)
+            .map(|t| {
+                t.duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs() as i64
+            })
             .unwrap_or_else(|_| Utc::now().timestamp() as i64);
 
         // Calculate checksum
@@ -191,7 +201,17 @@ impl FileScanner {
         &self,
         path: &Path,
         _file_meta: &fs::Metadata,
-    ) -> Result<(Option<i32>, Option<i32>, Option<i32>, Option<i64>, Option<String>, Option<(f64, f64)>), String> {
+    ) -> Result<
+        (
+            Option<i32>,
+            Option<i32>,
+            Option<i32>,
+            Option<i64>,
+            Option<String>,
+            Option<(f64, f64)>,
+        ),
+        String,
+    > {
         let mut width = None;
         let mut height = None;
         let mut taken_at = None;
@@ -208,15 +228,18 @@ impl FileScanner {
 
         // Try to extract EXIF data
         if self.config.extract_metadata {
-            let file = File::open(path)
-                .map_err(|e| format!("Failed to open image: {}", e))?;
+            let file = File::open(path).map_err(|e| format!("Failed to open image: {}", e))?;
             let mut buf_reader = BufReader::new(file);
 
             if let Ok(exif_reader) = self.exif_parser.read_from_container(&mut buf_reader) {
                 // Extract date/time
                 if let Some(field) = exif_reader.get_field(ExifTag::DateTime, ExifIn::PRIMARY) {
-                    if let Some(date_str) = field.display_value().to_string().strip_prefix("ASCII, ") {
-                        if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(date_str, "%Y:%m:%d %H:%M:%S") {
+                    if let Some(date_str) =
+                        field.display_value().to_string().strip_prefix("ASCII, ")
+                    {
+                        if let Ok(dt) =
+                            chrono::NaiveDateTime::parse_from_str(date_str, "%Y:%m:%d %H:%M:%S")
+                        {
                             taken_at = Some(dt.and_utc().timestamp() as i64);
                         }
                     }
@@ -244,13 +267,11 @@ impl FileScanner {
 
     /// Calculate file checksum
     fn calculate_checksum(&self, path: &Path) -> Result<String, String> {
-        let mut file = File::open(path)
-            .map_err(|e| format!("Failed to open file: {}", e))?;
-        
+        let mut file = File::open(path).map_err(|e| format!("Failed to open file: {}", e))?;
+
         let mut hasher = Sha256::new();
-        std::io::copy(&mut file, &mut hasher)
-            .map_err(|e| format!("Failed to read file: {}", e))?;
-        
+        std::io::copy(&mut file, &mut hasher).map_err(|e| format!("Failed to read file: {}", e))?;
+
         let result = hasher.finalize();
         Ok(format!("{:x}", result))
     }
@@ -262,7 +283,7 @@ impl FileScanner {
         }
 
         use image::{GenericImageView, ImageFormat};
-        
+
         // Determine output format from extension
         let format = match output_path.extension().and_then(|e| e.to_str()) {
             Some("jpg") | Some("jpeg") => ImageFormat::Jpeg,

@@ -28,7 +28,7 @@ rusqlite = { version = "0.31", features = ["bundled", "backup", "chrono"] }
 
 # 图像处理
 image = "0.25"
-kamadak-exif = "0.5"
+kamadak-exif = { version = "0.5", package = "kamadak-exif" }
 
 # 文件监控
 notify = "6.1"
