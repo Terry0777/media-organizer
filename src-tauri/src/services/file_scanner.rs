@@ -4,12 +4,12 @@
 
 use std::path::{Path, PathBuf};
 use std::fs::{self, File};
-use std::io::BufReader;
+use std::io::{BufReader, Write};
 use walkdir::WalkDir;
 use image::ImageReader;
-use kamadak_exif::Parser;
+use kamadak_exif::{Parser, Tag as ExifTag, In as ExifIn};
 use sha2::{Sha256, Digest};
-use log::{info, warn, error};
+use log::{info, warn};
 use chrono::Utc;
 
 use crate::models::*;
@@ -90,10 +90,9 @@ impl FileScanner {
                                 stats.total_files += 1;
                                 stats.total_size += media.file_size as u64;
                                 
-                                match media.file_type.as_str() {
-                                    "image" => stats.images += 1,
-                                    "video" => stats.videos += 1,
-                                    _ => {}
+                                match media.file_type {
+                                    FileType::Image => stats.images += 1,
+                                    FileType::Video => stats.videos += 1,
                                 }
                                 
                                 media_files.push(media);
@@ -133,9 +132,9 @@ impl FileScanner {
 
         // Determine file type
         let file_type = if IMAGE_EXTENSIONS.contains(&extension.as_str()) {
-            "image"
+            FileType::Image
         } else if VIDEO_EXTENSIONS.contains(&extension.as_str()) {
-            "video"
+            FileType::Video
         } else {
             return Ok(None); // Not a supported media file
         };
@@ -148,17 +147,17 @@ impl FileScanner {
         let created_at = file_meta
             .created()
             .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64)
-            .unwrap_or_else(|| Utc::now().timestamp());
+            .unwrap_or_else(|_| Utc::now().timestamp() as i64);
         let modified_at = file_meta
             .modified()
             .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64)
-            .unwrap_or_else(|| Utc::now().timestamp());
+            .unwrap_or_else(|_| Utc::now().timestamp() as i64);
 
         // Calculate checksum
         let checksum = self.calculate_checksum(path)?;
 
         // Extract media-specific metadata
-        let (width, height, duration, taken_at, device, gps) = if file_type == "image" {
+        let (width, height, duration, taken_at, device, gps) = if file_type == FileType::Image {
             self.extract_image_metadata(path, &file_meta)?
         } else {
             (None, None, None, None, None, None)
@@ -167,7 +166,7 @@ impl FileScanner {
         let media = MediaFile {
             id: None,
             file_path: path.to_string_lossy().to_string(),
-            file_type: file_type.to_string(),
+            file_type,
             file_size,
             width,
             height,
@@ -178,9 +177,10 @@ impl FileScanner {
             device,
             gps_lat: gps.as_ref().map(|g| g.0),
             gps_lon: gps.as_ref().map(|g| g.1),
-            checksum,
+            checksum: Some(checksum),
             thumbnail_path: None,
             is_deleted: false,
+            tags: vec![],
         };
 
         Ok(Some(media))
@@ -214,23 +214,23 @@ impl FileScanner {
 
             if let Ok(exif_reader) = self.exif_parser.read_from_container(&mut buf_reader) {
                 // Extract date/time
-                if let Some(field) = exif_reader.get_field(kamadak_exif::Tag::DateTime, kamadak_exif::In::PRIMARY) {
+                if let Some(field) = exif_reader.get_field(ExifTag::DateTime, ExifIn::PRIMARY) {
                     if let Some(date_str) = field.display_value().to_string().strip_prefix("ASCII, ") {
                         if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(date_str, "%Y:%m:%d %H:%M:%S") {
-                            taken_at = Some(dt.and_utc().timestamp());
+                            taken_at = Some(dt.and_utc().timestamp() as i64);
                         }
                     }
                 }
 
                 // Extract camera model
-                if let Some(field) = exif_reader.get_field(kamadak_exif::Tag::Model, kamadak_exif::In::PRIMARY) {
+                if let Some(field) = exif_reader.get_field(ExifTag::Model, ExifIn::PRIMARY) {
                     device = Some(field.display_value().to_string());
                 }
 
                 // Extract GPS
-                if let (Some(lat), Some(lon)) = (
-                    exif_reader.get_field(kamadak_exif::Tag::GPSLatitude, kamadak_exif::In::PRIMARY),
-                    exif_reader.get_field(kamadak_exif::Tag::GPSLongitude, kamadak_exif::In::PRIMARY),
+                if let (Some(_lat), Some(_lon)) = (
+                    exif_reader.get_field(ExifTag::GPSLatitude, ExifIn::PRIMARY),
+                    exif_reader.get_field(ExifTag::GPSLongitude, ExifIn::PRIMARY),
                 ) {
                     // Simplified GPS parsing (full implementation would handle degrees/minutes/seconds)
                     // For now, skip complex GPS parsing
@@ -284,8 +284,10 @@ impl FileScanner {
         );
 
         // Save thumbnail
+        let mut output_file = File::create(output_path)
+            .map_err(|e| format!("Failed to create thumbnail file: {}", e))?;
         thumbnail
-            .write_to(output_path, format)
+            .write_to(&mut output_file, format)
             .map_err(|e| format!("Failed to save thumbnail: {}", e))?;
 
         info!("Generated thumbnail: {:?}", output_path);

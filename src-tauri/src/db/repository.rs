@@ -2,8 +2,8 @@
 //! 
 //! Provides CRUD operations for media files, tags, and albums
 
-use rusqlite::{Connection, Result, params};
-use log::{info, debug, error};
+use rusqlite::{Connection, Result, params, OptionalExtension};
+use log::{info, warn};
 use chrono::Utc;
 
 use crate::models::*;
@@ -386,7 +386,7 @@ impl TagRepository {
     }
     
     /// Update tag with optional fields
-    pub fn update(
+    pub fn update_fields(
         conn: &Connection,
         id: i64,
         name: Option<&str>,
@@ -394,33 +394,33 @@ impl TagRepository {
         color: Option<&str>,
     ) -> Result<usize> {
         let mut updates = Vec::new();
-        let mut params: Vec<&dyn rusqlite::types::ToSql> = Vec::new();
+        let mut sql_params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
         
         if let Some(n) = name {
             updates.push("name = ?");
-            params.push(n);
+            sql_params.push(Box::new(n));
         }
         if let Some(pid) = parent_id {
             updates.push("parent_id = ?");
-            if let Some(id) = pid {
-                params.push(id);
+            if let Some(pid_val) = pid {
+                sql_params.push(Box::new(pid_val));
             } else {
-                params.push(&rusqlite::types::Value::Null);
+                sql_params.push(Box::new(None::<i64>));
             }
         }
         if let Some(c) = color {
             updates.push("color = ?");
-            params.push(c);
+            sql_params.push(Box::new(c));
         }
         
         if updates.is_empty() {
             return Ok(0);
         }
         
-        params.push(&id);
+        sql_params.push(Box::new(id));
         let sql = format!("UPDATE tags SET {} WHERE id = ?", updates.join(", "));
         
-        let rows = conn.execute(&sql, rusqlite::params_from_iter(params))?;
+        let rows = conn.execute(&sql, rusqlite::params_from_iter(sql_params))?;
         Ok(rows)
     }
     

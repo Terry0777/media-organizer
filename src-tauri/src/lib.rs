@@ -7,7 +7,7 @@ use models::*;
 use services::{FileScanner, ScannerConfig};
 use tauri::Manager;
 use std::sync::Arc;
-use log::info;
+use log::{info, warn};
 
 /// Application state shared across Tauri commands
 pub struct AppState {
@@ -112,7 +112,7 @@ fn update_tag(
     color: Option<String>,
 ) -> Result<(), String> {
     let conn = app_state.db.get_conn().map_err(|e| e.to_string())?;
-    TagRepository::update(&conn, id, name.as_deref(), parent_id, color.as_deref())
+    TagRepository::update_fields(&conn, id, name.as_deref(), parent_id, color.as_deref())
         .map(|_| ())
         .map_err(|e| e.to_string())
 }

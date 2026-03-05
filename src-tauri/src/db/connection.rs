@@ -1,6 +1,6 @@
 //! Database connection and management
 
-use rusqlite::{Connection, Result};
+use rusqlite::{Connection, Result, OptionalExtension};
 use std::path::Path;
 use std::sync::Mutex;
 use log::{info, error};
@@ -76,21 +76,7 @@ impl Database {
     /// Get database file path (for backup purposes)
     pub fn path(&self) -> Option<String> {
         let conn = self.get_conn().ok()?;
-        conn.path().map(|p| p.to_string_lossy().to_string())
-    }
-    
-    /// Backup database to given path
-    pub fn backup<P: AsRef<Path>>(&self, backup_path: P) -> Result<()> {
-        let conn = self.get_conn()?;
-        conn.backup(
-            rusqlite::backup::DatabaseName::Main,
-            backup_path.as_ref(),
-            Some(|p: rusqlite::backup::Progress| {
-                info!("Backup progress: {}%", p.pagecount - p.remaining);
-            }),
-        )?;
-        info!("Database backed up to: {:?}", backup_path.as_ref());
-        Ok(())
+        conn.path().map(|p| p.to_string())
     }
     
     /// Run VACUUM to optimize database
