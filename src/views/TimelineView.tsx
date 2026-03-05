@@ -5,6 +5,8 @@ import { MediaGrid } from '../components/MediaGrid'
 import { TimelineHeader } from '../components/TimelineHeader'
 import { SelectionToolbar } from '../components/SelectionToolbar'
 import { FilterPanel } from '../components/FilterPanel'
+import { MediaViewer } from '../components/MediaViewer'
+import type { MediaFile } from '../types'
 import './TimelineView.css'
 
 export function TimelineView() {
@@ -25,6 +27,7 @@ export function TimelineView() {
   } = useTimelineStore()
   
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [viewingMedia, setViewingMedia] = useState<MediaFile | null>(null)
 
   useEffect(() => {
     // Initial load
@@ -50,6 +53,32 @@ export function TimelineView() {
       deselectMedia(mediaId)
     } else {
       selectMedia(mediaId)
+    }
+  }
+
+  const handleMediaClick = (media: MediaFile) => {
+    if (!isSelectionMode) {
+      setViewingMedia(media)
+    }
+  }
+
+  const handleCloseViewer = () => {
+    setViewingMedia(null)
+  }
+
+  const handleNextMedia = () => {
+    if (!viewingMedia) return
+    const currentIndex = mediaFiles.findIndex(m => m.id === viewingMedia.id)
+    if (currentIndex < mediaFiles.length - 1) {
+      setViewingMedia(mediaFiles[currentIndex + 1])
+    }
+  }
+
+  const handlePrevMedia = () => {
+    if (!viewingMedia) return
+    const currentIndex = mediaFiles.findIndex(m => m.id === viewingMedia.id)
+    if (currentIndex > 0) {
+      setViewingMedia(mediaFiles[currentIndex - 1])
     }
   }
 
@@ -103,6 +132,7 @@ export function TimelineView() {
             isSelectionMode={isSelectionMode}
             selectedMediaIds={selectedMediaIds}
             onSelectMedia={handleSelectMedia}
+            onMediaClick={handleMediaClick}
           />
         )}
       </main>
@@ -111,6 +141,15 @@ export function TimelineView() {
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
       />
+
+      {viewingMedia && (
+        <MediaViewer
+          media={viewingMedia}
+          onClose={handleCloseViewer}
+          onNext={handleNextMedia}
+          onPrev={handlePrevMedia}
+        />
+      )}
     </div>
   )
 }

@@ -7,6 +7,7 @@ interface MediaGridProps {
   isSelectionMode: boolean
   selectedMediaIds: number[]
   onSelectMedia: (mediaId: number) => void
+  onMediaClick?: (media: MediaFile) => void
 }
 
 export function MediaGrid({
@@ -14,6 +15,7 @@ export function MediaGrid({
   isSelectionMode,
   selectedMediaIds,
   onSelectMedia,
+  onMediaClick,
 }: MediaGridProps) {
   // Group media files by date
   const groupedByDate = groupMediaByDate(mediaFiles)
@@ -42,7 +44,7 @@ export function MediaGrid({
                     />
                   </div>
                 )}
-                <MediaCard media={file} />
+                <MediaCard media={file} onClick={() => onMediaClick?.(file)} />
               </div>
             ))}
           </div>

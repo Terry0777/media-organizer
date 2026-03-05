@@ -3,15 +3,17 @@ import './MediaCard.css'
 
 interface MediaCardProps {
   media: MediaFile
+  onClick?: () => void
 }
 
-export function MediaCard({ media }: MediaCardProps) {
+export function MediaCard({ media, onClick }: MediaCardProps) {
   const fileType = media.file_type === 'image' ? '📷' : '🎥'
   const fileSize = formatFileSize(media.file_size)
   
   const handleClick = () => {
-    // TODO: Open media viewer
-    console.log('Clicked media:', media.id)
+    if (onClick) {
+      onClick()
+    }
   }
   
   return (
