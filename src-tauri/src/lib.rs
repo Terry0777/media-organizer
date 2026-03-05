@@ -2,12 +2,16 @@ mod db;
 mod models;
 mod services;
 
-use db::{Database, MediaRepository, TagRepository, MediaTagRepository, AlbumRepository, AlbumMediaRepository};
+use db::{
+    AlbumMediaRepository, AlbumRepository, Database, MediaRepository, MediaTagRepository,
+    TagRepository,
+};
+use log::{info, warn};
 use models::*;
 use services::{FileScanner, ScannerConfig};
-use tauri::Manager;
 use std::sync::Arc;
-use log::{info, warn};
+use tauri::Manager;
+use tauri_plugin_dialog::DialogExt;
 
 /// Application state shared across Tauri commands
 pub struct AppState {
@@ -23,11 +27,7 @@ fn greet(name: &str) -> String {
 #[tauri::command]
 fn init_database(app_state: tauri::State<AppState>) -> Result<bool, String> {
     info!("Initializing database");
-    app_state
-        .db
-        .init()
-        .map(|_| true)
-        .map_err(|e| e.to_string())
+    app_state.db.init().map(|_| true).map_err(|e| e.to_string())
 }
 
 /// Get database statistics
@@ -39,10 +39,7 @@ fn get_database_stats(app_state: tauri::State<AppState>) -> Result<DatabaseStats
 
 /// Create a new media file record
 #[tauri::command]
-fn create_media_file(
-    app_state: tauri::State<AppState>,
-    media: MediaFile,
-) -> Result<i64, String> {
+fn create_media_file(app_state: tauri::State<AppState>, media: MediaFile) -> Result<i64, String> {
     let conn = app_state.db.get_conn().map_err(|e| e.to_string())?;
     MediaRepository::insert(&conn, &media).map_err(|e| e.to_string())
 }
@@ -125,7 +122,7 @@ fn delete_tag(
     delete_children: bool,
 ) -> Result<usize, String> {
     let conn = app_state.db.get_conn().map_err(|e| e.to_string())?;
-    
+
     if delete_children {
         // Delete all descendants first
         TagRepository::delete_with_children(&conn, id).map_err(|e| e.to_string())
@@ -147,8 +144,7 @@ fn merge_tags(
     target_tag_id: i64,
 ) -> Result<usize, String> {
     let conn = app_state.db.get_conn().map_err(|e| e.to_string())?;
-    TagRepository::merge_tags(&conn, source_tag_id, target_tag_id)
-        .map_err(|e| e.to_string())
+    TagRepository::merge_tags(&conn, source_tag_id, target_tag_id).map_err(|e| e.to_string())
 }
 
 /// Get suggested tags based on media metadata
@@ -195,25 +191,28 @@ async fn scan_directory(
     extract_metadata: bool,
 ) -> Result<ScanResult, String> {
     use std::path::Path;
-    
-    info!("Scanning directory: {} (recursive={}, metadata={})", path, recursive, extract_metadata);
-    
+
+    info!(
+        "Scanning directory: {} (recursive={}, metadata={})",
+        path, recursive, extract_metadata
+    );
+
     let config = ScannerConfig {
         recursive,
         extract_metadata,
         generate_thumbnail: false,
         thumbnail_size: 256,
     };
-    
+
     let scanner = FileScanner::new(config);
     let path = Path::new(&path);
-    
+
     let (media_files, stats) = scanner.scan_directory(path)?;
-    
+
     // Insert media files into database
     let conn = app_state.db.get_conn().map_err(|e| e.to_string())?;
     let mut inserted_count = 0;
-    
+
     for media in media_files {
         match MediaRepository::insert(&conn, &media) {
             Ok(_) => inserted_count += 1,
@@ -222,9 +221,9 @@ async fn scan_directory(
             }
         }
     }
-    
+
     info!("Scan completed: {} files inserted", inserted_count);
-    
+
     Ok(ScanResult {
         message: format!("Successfully scanned {} files", stats.total_files),
         stats: ScanStats {
@@ -314,9 +313,10 @@ fn get_media_for_album(
 pub fn run() {
     // Initialize logger
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
-    
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // Initialize database
             let app_handle = app.handle().clone();
@@ -325,16 +325,14 @@ pub fn run() {
                 .app_data_dir()
                 .map(|p| p.join("media_organizer.db"))
                 .map_err(|e| e.to_string())?;
-            
+
             info!("Database path: {:?}", db_path);
-            
+
             let db = Database::open(db_path).map_err(|e| e.to_string())?;
             db.init().map_err(|e| e.to_string())?;
-            
-            app.manage(AppState {
-                db: Arc::new(db),
-            });
-            
+
+            app.manage(AppState { db: Arc::new(db) });
+
             info!("Application started successfully");
             Ok(())
         })
