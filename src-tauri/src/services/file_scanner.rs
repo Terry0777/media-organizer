@@ -28,6 +28,7 @@ pub struct ScannerConfig {
     pub extract_metadata: bool,
     pub generate_thumbnail: bool,
     pub thumbnail_size: u32,
+    pub calculate_checksum: bool, // Only calculate when needed (e.g., deduplication)
 }
 
 impl Default for ScannerConfig {
@@ -37,6 +38,7 @@ impl Default for ScannerConfig {
             extract_metadata: true,
             generate_thumbnail: false,
             thumbnail_size: 256,
+            calculate_checksum: false, // Default to false for performance
         }
     }
 }
@@ -120,7 +122,7 @@ impl FileScanner {
         Ok((media_files, stats))
     }
 
-    /// Process single file
+    /// Process single file (optimized for speed)
     fn process_file(&self, path: &Path) -> Result<Option<MediaFile>, String> {
         let extension = path
             .extension()
@@ -159,12 +161,16 @@ impl FileScanner {
             })
             .unwrap_or_else(|_| Utc::now().timestamp() as i64);
 
-        // Calculate checksum
-        let checksum = self.calculate_checksum(path)?;
+        // Calculate checksum only if requested (for deduplication)
+        let checksum = if self.config.calculate_checksum {
+            Some(self.calculate_checksum(path)?)
+        } else {
+            None // Skip for performance
+        };
 
         // Extract media-specific metadata
         let (width, height, duration, taken_at, device, gps) = if file_type == FileType::Image {
-            self.extract_image_metadata(path, &file_meta)?
+            self.extract_image_metadata_fast(path, &file_meta)?
         } else {
             (None, None, None, None, None, None)
         };
@@ -183,7 +189,7 @@ impl FileScanner {
             device,
             gps_lat: gps.as_ref().map(|g| g.0),
             gps_lon: gps.as_ref().map(|g| g.1),
-            checksum: Some(checksum),
+            checksum,
             thumbnail_path: None,
             is_deleted: false,
             tags: Some(vec![]),
