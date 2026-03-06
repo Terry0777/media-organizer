@@ -12,6 +12,7 @@ use services::{FileScanner, ScannerConfig};
 use std::sync::Arc;
 use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_fs::FsExt;
 
 /// Application state shared across Tauri commands
 pub struct AppState {
@@ -318,6 +319,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             // Initialize database
             let app_handle = app.handle().clone();
