@@ -12,6 +12,18 @@ interface MediaViewerProps {
 
 export function MediaViewer({ media, onClose, onNext, onPrev }: MediaViewerProps) {
   const [isLoading, setIsLoading] = useState(true)
+  const [mediaSrc, setMediaSrc] = useState('')
+
+  // Convert file path to URL on mount
+  useEffect(() => {
+    try {
+      const url = convertFileSrc(media.file_path)
+      setMediaSrc(url)
+    } catch (error) {
+      console.error('Failed to convert file path:', error)
+      setMediaSrc('')
+    }
+  }, [media.file_path])
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -28,8 +40,6 @@ export function MediaViewer({ media, onClose, onNext, onPrev }: MediaViewerProps
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose, onNext, onPrev])
-
-  const mediaSrc = convertFileSrc(media.file_path)
 
   return (
     <div className="media-viewer-overlay" onClick={onClose}>
