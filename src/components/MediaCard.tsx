@@ -1,3 +1,4 @@
+import { convertFileSrc } from '@tauri-apps/api/core'
 import type { MediaFile } from '../types'
 import './MediaCard.css'
 
@@ -10,6 +11,11 @@ export function MediaCard({ media, onClick }: MediaCardProps) {
   const fileType = media.file_type === 'image' ? '📷' : '🎥'
   const fileSize = formatFileSize(media.file_size)
   
+  // Convert thumbnail path to asset URL if available
+  const thumbnailSrc = media.thumbnail_path && media.thumbnail_path.trim() !== ''
+    ? convertFileSrc(media.thumbnail_path)
+    : null
+  
   const handleClick = () => {
     if (onClick) {
       onClick()
@@ -19,8 +25,8 @@ export function MediaCard({ media, onClick }: MediaCardProps) {
   return (
     <div className="media-card" onClick={handleClick}>
       <div className="media-thumbnail">
-        {media.thumbnail_path ? (
-          <img src={media.thumbnail_path} alt={media.file_path} loading="lazy" />
+        {thumbnailSrc ? (
+          <img src={thumbnailSrc} alt={media.file_path} loading="lazy" />
         ) : (
           <div className="thumbnail-placeholder">
             <span className="file-type">{fileType}</span>
