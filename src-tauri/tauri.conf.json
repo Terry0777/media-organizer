@@ -22,6 +22,12 @@
     ],
     "security": {
       "csp": null
+    },
+    "assetProtocol": {
+      "scope": {
+        "allow": ["**"],
+        "requireLiteralLeadingDot": false
+      }
     }
   },
   "bundle": {
