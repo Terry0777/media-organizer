@@ -90,3 +90,13 @@ export interface DatabaseStats {
   total_tags: number;
   total_albums: number;
 }
+
+/**
+ * Thumbnail generation result
+ */
+export interface ThumbnailGenerationResult {
+  total: number;
+  generated: number;
+  errors: number;
+  skipped: number;
+}
