@@ -143,3 +143,20 @@ export async function addMediaToAlbum(
 export async function getMediaForAlbum(albumId: number): Promise<MediaFile[]> {
   return invoke('get_media_for_album', { album_id: albumId })
 }
+
+/**
+ * Generate thumbnails for all media files (background task)
+ */
+export async function generateThumbnails(): Promise<ThumbnailGenerationResult> {
+  return invoke('generate_thumbnails')
+}
+
+/**
+ * Thumbnail generation result
+ */
+export interface ThumbnailGenerationResult {
+  total: number
+  generated: number
+  errors: number
+  skipped: number
+}

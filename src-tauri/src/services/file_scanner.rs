@@ -36,8 +36,8 @@ impl Default for ScannerConfig {
         Self {
             recursive: true,
             extract_metadata: true,
-            generate_thumbnail: false,
-            thumbnail_size: 256,
+            generate_thumbnail: false, // Generate thumbnails asynchronously after scan
+            thumbnail_size: 512,       // Larger size for better quality
             calculate_checksum: false, // Default to false for performance
         }
     }

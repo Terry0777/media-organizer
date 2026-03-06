@@ -204,3 +204,12 @@ pub struct ScanProgress {
     pub total: u64,
     pub percentage: f64,
 }
+
+/// Thumbnail generation result
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ThumbnailGenerationResult {
+    pub total: usize,
+    pub generated: usize,
+    pub errors: usize,
+    pub skipped: usize,
+}
