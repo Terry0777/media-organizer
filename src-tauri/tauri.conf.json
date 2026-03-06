@@ -26,7 +26,7 @@
   },
   "plugins": {
     "fs": {
-      "scope": ["**"]
+      "requireLiteralLeadingDot": true
     }
   },
   "bundle": {
